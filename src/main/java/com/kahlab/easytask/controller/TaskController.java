@@ -1,16 +1,13 @@
 package com.kahlab.easytask.controller;
 
-
 import com.kahlab.easytask.model.Task;
 import com.kahlab.easytask.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/tasks")
@@ -21,67 +18,75 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        Task savedTask = taskService.saveOrUpdateTask(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedTask);
+        Task createdTask = taskService.createTask(task);
+        return ResponseEntity.ok(createdTask);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
-        Optional<Task> task = taskService.findTaskById(id);
-        return task.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @PostMapping("/{idTask}/move")
+    public ResponseEntity<Task> moveTaskToPhase(@PathVariable Long idTask, @RequestBody Long idPhase) {
+        try {
+            Task updatedTask = taskService.moveTaskToPhase(idTask, idPhase);
+            return ResponseEntity.ok(updatedTask);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Novo endpoint para buscar tarefas pela fase
-    @GetMapping("/searchByPhase")
-    public ResponseEntity<List<Task>> findTasksByPhase(@RequestParam Long phase) {
-        List<Task> tasks = taskService.findTasksByPhase(phase);
-        return tasks.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(tasks);
-    }
-
-    // Novo endpoint para buscar tarefas pela prioridade
-    @GetMapping("/searchByPriority")
-    public ResponseEntity<List<Task>> findTasksByPriority(@RequestParam int priority) {
-        List<Task> tasks = taskService.findTasksByPriority(priority);
-        return tasks.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(tasks);
-    }
-
-    // Novo endpoint para buscar tarefas associadas a um colaborador específico
-    @GetMapping("/searchByCollaborator")
-    public ResponseEntity<List<Task>> findTasksByCollaboratorId(@RequestParam Long collaboratorId) {
-        List<Task> tasks = taskService.findTasksByCollaboratorId(collaboratorId);
-        return tasks.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(tasks);
-    }
-
-    // Novo endpoint para buscar tarefas associadas a um cliente específico
-    @GetMapping("/searchByClient")
-    public ResponseEntity<List<Task>> findTasksByClientId(@RequestParam Long clientId) {
-        List<Task> tasks = taskService.findTasksByClientId(clientId);
-        return tasks.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(tasks);
-    }
-
-    // Novo endpoint para buscar tarefas com data de criação anterior a uma data específica
-    @GetMapping("/searchByCreationDateBefore")
-    public ResponseEntity<List<Task>> findTasksByCreationDateBefore(@RequestParam Date creationDate) {
-        List<Task> tasks = taskService.findTasksByCreationDateBefore(creationDate);
-        return tasks.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(tasks);
-    }
-
-    // Novo endpoint para buscar tarefas com data de conclusão entre duas datas
-    @GetMapping("/searchByCompletionDateRange")
-    public ResponseEntity<List<Task>> findTasksByCompletionDateBetween(@RequestParam Date startDate, @RequestParam Date endDate) {
-        List<Task> tasks = taskService.findTasksByCompletionDateBetween(startDate, endDate);
-        return tasks.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(tasks);
+    @PutMapping("/{idTask}")
+    public ResponseEntity<Task> updateTask(@PathVariable Long idTask, @RequestBody Task task) {
+        try {
+            Task updatedTask = taskService.updateTask(idTask, task);
+            return ResponseEntity.ok(updatedTask);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
-        return taskService.findAllTasks();
+    public ResponseEntity<List<Task>> getAllTasks() {
+        List<Task> tasks = taskService.findAllTasks();
+        return ResponseEntity.ok(tasks);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
-        taskService.deleteTask(id);
+    @GetMapping("/{idTask}")
+    public ResponseEntity<Task> getTaskById(@PathVariable Long idTask) {
+        return taskService.findTaskById(idTask)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/collaborator/{idCollaborator}")
+    public ResponseEntity<List<Task>> getTasksByCollaborator(@PathVariable Long idCollaborator) {
+        List<Task> tasks = taskService.findTasksByCollaboratorId(idCollaborator);
+        return ResponseEntity.ok(tasks);
+    }
+
+    // Relatório de tarefas por cliente
+    @GetMapping("/report/client/{clientId}")
+    public ResponseEntity<List<Task>> getTasksByClient(@PathVariable Long clientId) {
+        List<Task> tasks = taskService.findTasksByClientId(clientId);
+        if (tasks.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(tasks);
+    }
+
+    // Relatório de estatísticas gerais
+    @GetMapping("/report/general-statistics")
+    public ResponseEntity<Map<String, Object>> getGeneralStatistics() {
+        Map<String, Object> statistics = taskService.getGeneralStatistics();
+        return ResponseEntity.ok(statistics);
+    }
+
+    @GetMapping("/phase/{idPhase}")
+    public ResponseEntity<List<Task>> getTasksByPhase(@PathVariable Long idPhase) {
+        List<Task> tasks = taskService.findTasksByPhase(idPhase);
+        return ResponseEntity.ok(tasks);
+    }
+
+    @DeleteMapping("/{idTask}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long idTask) {
+        taskService.deleteTask(idTask);
         return ResponseEntity.noContent().build();
     }
 

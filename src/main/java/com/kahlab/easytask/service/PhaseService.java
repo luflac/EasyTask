@@ -13,9 +13,19 @@ public class PhaseService {
     @Autowired
     private PhaseRepository phaseRepository;
 
-    // Salva ou atualiza uma fase
+    // Salva uma fase
     public Phase saveOrUpdatePhase(Phase phase) {
         return phaseRepository.save(phase);
+    }
+
+    // Edita uma Fase
+    public Phase updatePhase(Long id, Phase updatedPhase) {
+        return phaseRepository.findById(id).map(existingPhase -> {
+            existingPhase.setName(updatedPhase.getName());
+            existingPhase.setDescription(updatedPhase.getDescription());
+            existingPhase.setSequence(updatedPhase.getSequence());
+            return phaseRepository.save(existingPhase);
+        }).orElseThrow(() -> new RuntimeException("Phase not found with ID: " + id));
     }
 
     // Busca uma fase pelo ID

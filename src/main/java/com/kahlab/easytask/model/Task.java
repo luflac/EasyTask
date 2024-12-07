@@ -1,99 +1,39 @@
 package com.kahlab.easytask.model;
-
 import jakarta.persistence.*;
-import java.util.Date;
+import lombok.Getter;
+import lombok.Setter;
+import java.time.LocalDate;
 
 @Entity
+@Getter
+@Setter
 public class Task {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String title;
-    private String description;
-
-    @Temporal(TemporalType.DATE)
-    private Date creationDate;
-
-    @Temporal(TemporalType.DATE)
-    private Date completionDate;
-
-    private int priority;
+    private Long idTask;
 
     @ManyToOne
-    @JoinColumn(name = "collaborator_id")
+    @JoinColumn(name = "id_collaborator", nullable = false)
     private Collaborator collaborator;
 
     @ManyToOne
-    @JoinColumn(name = "client_id")
+    @JoinColumn(name = "id_client", nullable = false)
     private Client client;
 
     @ManyToOne
-    @JoinColumn(name = "phase_id")
+    @JoinColumn(name = "id_phase", nullable = false)
     private Phase phase;
 
+    private String title;
+    private String description;
+    private Short priority;
 
-    public Long getId() {
-        return id;
-    }
+    @Temporal(TemporalType.DATE)
+    private LocalDate dueDate;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Temporal(TemporalType.DATE)
+    @Column(updatable = false)
+    private LocalDate creationDate = LocalDate.now();
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Date getCreationDate() {
-        return creationDate;
-    }
-
-    public void setCreationDate(Date creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    public Date getCompletionDate() {
-        return completionDate;
-    }
-
-    public void setCompletionDate(Date completionDate) {
-        this.completionDate = completionDate;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public void setPriority(int priority) {
-        this.priority = priority;
-    }
-
-    public Collaborator getCollaborator() {
-        return collaborator;
-    }
-
-    public void setCollaborator(Collaborator collaborator) {
-        this.collaborator = collaborator;
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public void setClient(Client client) {
-        this.client = client;
-    }
 }

@@ -14,9 +14,21 @@ public class CollaboratorService {
     @Autowired
     private CollaboratorRepository collaboratorRepository;
 
-    // Método para salvar ou atualizar um colaborador
+    // Método para salvar um colaborador
     public Collaborator saveOrUpdateCollaborator(Collaborator collaborator) {
         return collaboratorRepository.save(collaborator);
+    }
+
+    // Atualizar colaborador
+    public Collaborator updateCollaborator(Long id, Collaborator updatedCollaborator) {
+        return collaboratorRepository.findById(id).map(existingCollaborator -> {
+            existingCollaborator.setName(updatedCollaborator.getName());
+            existingCollaborator.setPassword(updatedCollaborator.getPassword());
+            existingCollaborator.setEmail(updatedCollaborator.getEmail());
+            existingCollaborator.setPhone(updatedCollaborator.getPhone());
+            existingCollaborator.setPosition(updatedCollaborator.getPosition());
+            return collaboratorRepository.save(existingCollaborator);
+        }).orElseThrow(() -> new RuntimeException("Collaborator not found with ID: " + id));
     }
 
     // Método para buscar colaborador pelo Nome
