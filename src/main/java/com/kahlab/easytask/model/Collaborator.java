@@ -21,8 +21,16 @@ public class Collaborator {
     private String phone;
     private String position;//funçao do colaborador!
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AccessLevelEasyTask accessLevel;
+
     @OneToMany(mappedBy = "collaborator")
     @JsonIgnore
     private List<Task> tasks;
+
+
+
+
 
 }

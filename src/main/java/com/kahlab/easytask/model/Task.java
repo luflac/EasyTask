@@ -14,6 +14,10 @@ public class Task {
     private Long idTask;
 
     @ManyToOne
+    @JoinColumn(name = "id_board", nullable = false)
+    private Board board;
+
+    @ManyToOne
     @JoinColumn(name = "id_collaborator", nullable = false)
     private Collaborator collaborator;
 
@@ -29,10 +33,8 @@ public class Task {
     private String description;
     private Short priority;
 
-    @Temporal(TemporalType.DATE)
     private LocalDate dueDate;
 
-    @Temporal(TemporalType.DATE)
     @Column(updatable = false)
     private LocalDate creationDate = LocalDate.now();
 

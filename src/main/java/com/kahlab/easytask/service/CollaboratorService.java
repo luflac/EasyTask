@@ -3,6 +3,7 @@ package com.kahlab.easytask.service;
 import com.kahlab.easytask.model.Collaborator;
 import com.kahlab.easytask.repository.CollaboratorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,8 +15,15 @@ public class CollaboratorService {
     @Autowired
     private CollaboratorRepository collaboratorRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     // Método para salvar um colaborador
     public Collaborator saveOrUpdateCollaborator(Collaborator collaborator) {
+        if (collaborator.getPassword() != null && !collaborator.getPassword().startsWith("$2a$")) {
+            String hashedPassword = passwordEncoder.encode(collaborator.getPassword());
+            collaborator.setPassword(hashedPassword);
+        }
         return collaboratorRepository.save(collaborator);
     }
 
