@@ -8,6 +8,7 @@ import com.kahlab.easytask.security.JwtUtil;
 import com.kahlab.easytask.security.RefreshTokenService;
 import com.kahlab.easytask.security.TokenBlackList;
 import com.kahlab.easytask.service.CollaboratorService;
+import com.kahlab.easytask.service.LogService;
 import com.kahlab.easytask.service.TaskService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,24 +29,21 @@ public class CollaboratorController {
 
     @Autowired
     private CollaboratorService collaboratorService;
-
     @Autowired
     private CollaboratorRepository collaboratorRepository;
-
     @Autowired
     private TaskService taskService;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
-
     @Autowired
     private JwtUtil jwtUtil;
-
     @Autowired
     private TokenBlackList tokenBlackList;
-
     @Autowired
     private RefreshTokenService refreshTokenService;
+    @Autowired
+    private LogService logService;
+
 
     @PreAuthorize("hasRole('SUPERIOR')")
     @PostMapping
@@ -64,7 +62,6 @@ public class CollaboratorController {
             return ResponseEntity.notFound().build();
         }
     }
-
 
     @GetMapping("/{idCollaborator}")
     public ResponseEntity<Collaborator> getCollaboratorById(@PathVariable Long idCollaborator) {
@@ -139,7 +136,6 @@ public class CollaboratorController {
                 ));
     }
 
-
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String mail = request.get("email");
@@ -166,6 +162,14 @@ public class CollaboratorController {
         String refreshToken = java.util.UUID.randomUUID().toString();
         refreshTokenService.store(refreshToken, collaborator.getEmail(), Duration.ofDays(1));
 
+        logService.logAction(
+                collaborator.getIdCollaborator(),
+                "AUTH",
+                "LOGIN",
+                "Login efetuado com sucesso pelo colaborador '" + collaborator.getName() + "'"
+        );
+
+
         // ✅ Retorna os dois tokens
         return ResponseEntity.ok(Map.of(
                 "accessToken", accessToken,
@@ -180,7 +184,30 @@ public class CollaboratorController {
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+
+            // Valida o token
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(400).body(Map.of("error", "Token inválido"));
+            }
+
+            // Extrai email e busca colaborador
+            String email = jwtUtil.extractEmail(token);
+            Optional<Collaborator> collaboratorOpt = collaboratorRepository.findByEmail(email);
+            if (collaboratorOpt.isPresent()) {
+                Collaborator collaborator = collaboratorOpt.get();
+
+                // ✅ REGISTRO DE LOG
+                logService.logAction(
+                        collaborator.getIdCollaborator(),
+                        "AUTH",
+                        "LOGOUT",
+                        "Logout efetuado pelo colaborador '" + collaborator.getName() + "'"
+                );
+            }
+
+            // Revoga o token
             tokenBlackList.revokeToken(token);
+
             return ResponseEntity.ok(Map.of("message", "Logout realizado com sucesso"));
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "Token não fornecido"));

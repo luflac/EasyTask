@@ -105,11 +105,12 @@ public class BoardController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBoard(@PathVariable Long id) {
-        if (!boardRepository.existsById(id)){
+        try {
+            boardService.deleteBoard(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-
-        boardRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
+
 }

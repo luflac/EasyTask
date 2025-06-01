@@ -61,6 +61,9 @@ public class SecurityConfig {
                         // REPORTS
                         .requestMatchers(HttpMethod.GET, "/reports/**").authenticated()
 
+                        // LOGS
+                        .requestMatchers(HttpMethod.GET, "/logs/**").hasRole("SUPERIOR")
+
                         // BOARDS
                         .requestMatchers(HttpMethod.GET, "/boards/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/boards/**").authenticated()

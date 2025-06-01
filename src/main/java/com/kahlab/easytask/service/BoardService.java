@@ -10,6 +10,7 @@ import com.kahlab.easytask.repository.BoardRepository;
 import com.kahlab.easytask.repository.CollaboratorRepository;
 import com.kahlab.easytask.repository.PhaseBoardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,12 +20,16 @@ public class BoardService {
 
     @Autowired
     private BoardRepository boardRepository;
-
     @Autowired
     private CollaboratorRepository collaboratorRepository;
-
     @Autowired
     private PhaseBoardRepository phaseBoardRepository;
+    @Autowired
+    private LogService logService;
+
+    private String getLoggedUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
     public Board createBoard(BoardDTO dto) {
         Board board = new Board();
@@ -34,7 +39,21 @@ public class BoardService {
             List<Collaborator> collaborators = collaboratorRepository.findAllById(dto.getCollaboratorIds());
             board.setCollaborators(collaborators);
         }
-        return boardRepository.save(board);
+        Board savedBoard = boardRepository.save(board);
+
+        // ✅ Log da criação
+        String loggedEmail = getLoggedUserEmail();
+        Collaborator author = collaboratorRepository.findByEmail(loggedEmail)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        logService.logAction(
+                author.getIdCollaborator(),
+                "BOARD",
+                "CREATE",
+                "Board '" + savedBoard.getName() + "' foi criado"
+        );
+
+        return savedBoard;
     }
 
     public BoardResponseDTO getBoardById(Long id) {
@@ -117,7 +136,23 @@ public class BoardService {
                 .toList();
     }
 
+    public void deleteBoard(Long id) {
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Board não encontrado"));
 
+        String loggedEmail = getLoggedUserEmail();
+        Collaborator author = collaboratorRepository.findByEmail(loggedEmail)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        logService.logAction(
+                author.getIdCollaborator(),
+                "BOARD",
+                "DELETE",
+                "Board '" + board.getName() + "' foi excluído"
+        );
+
+        boardRepository.delete(board);
+    }
 
 
 }

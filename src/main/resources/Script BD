@@ -51,3 +51,12 @@ CREATE TABLE comment (
         REFERENCES collaborator(id_collaborator)
         ON DELETE CASCADE
 );
+
+CREATE TABLE log_entry (
+    id_log_entry SERIAL PRIMARY KEY,
+    collaborator_id INTEGER NOT NULL REFERENCES collaborator(id_collaborator),
+    entity_type VARCHAR(50) NOT NULL,  -- Ex: TASK, CLIENT, COMMENT
+    action VARCHAR(50) NOT NULL,       -- Ex: CREATE, UPDATE, DELETE
+    description TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

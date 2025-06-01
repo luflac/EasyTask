@@ -4,6 +4,7 @@ import com.kahlab.easytask.DTO.TaskDTO;
 import com.kahlab.easytask.DTO.TaskResponseDTO;
 import com.kahlab.easytask.model.*;
 import com.kahlab.easytask.repository.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,9 @@ public class TaskService {
     private PhaseBoardRepository phaseBoardRepository;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private LogService logService;
+
 
 
 
@@ -69,6 +73,15 @@ public class TaskService {
 
         // Salvar a tarefa
         Task savedTask = taskRepository.save(task);
+
+        logService.logAction(
+                collaborator.getIdCollaborator(),
+                "TASK",
+                "CREATE",
+                "Tarefa '" + task.getTitle() + "' criada no board '" + board.getName() +
+                        "' com prioridade " + task.getPriority() +
+                        " atribuída ao colaborador '" + collaborator.getName() + "'"
+        );
 
         // Enviar e-mail para o colaborador
         String emailBody = buildNewTaskEmail(collaborator.getName(), task.getTitle());
@@ -140,6 +153,16 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Collaborator not found"));
         existingTask.setCollaborator(collaborator);
 
+        Task updated = taskRepository.save(existingTask);
+
+        // ✅ REGISTRO DE LOG
+        logService.logAction(
+                collaborator.getIdCollaborator(),
+                "TASK",
+                "UPDATE",
+                "Tarefa '" + updated.getTitle() + "' foi atualizada no board '" + board.getName() + "'"
+        );
+
         return taskRepository.save(existingTask);
     }
 
@@ -153,6 +176,7 @@ public class TaskService {
 
         // Verifica se a fase mudou de fato
         if (!task.getPhase().getIdPhase().equals(phaseId)) {
+            Phase oldPhase = task.getPhase();
             task.setPhase(newPhase);
             Task updatedTask = taskRepository.save(task);
 
@@ -168,6 +192,14 @@ public class TaskService {
                     collaborator.getEmail(),
                     "Sua tarefa mudou de fase!",
                     emailBody
+            );
+
+            // ✅ REGISTRO DE LOG
+            logService.logAction(
+                    collaborator.getIdCollaborator(),
+                    "TASK",
+                    "MOVE",
+                    "Tarefa '" + task.getTitle() + "' movida da fase '" + oldPhase.getName() + "' para '" + newPhase.getName() + "'"
             );
 
             return updatedTask;
@@ -220,7 +252,18 @@ public class TaskService {
 
     // Deleta uma tarefa pelo ID
     public void deleteTask(Long id) {
-        taskRepository.deleteById(id);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Tarefa não encontrada"));
+
+        // ✅ REGISTRO DE LOG
+        logService.logAction(
+                task.getCollaborator().getIdCollaborator(),
+                "TASK",
+                "DELETE",
+                "Tarefa '" + task.getTitle() + "' foi excluída do board '" + task.getBoard().getName() + "'"
+        );
+
+        taskRepository.delete(task);
     }
 
     // Busca tarefas por estagio

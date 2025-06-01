@@ -3,6 +3,7 @@ package com.kahlab.easytask.service;
 import com.kahlab.easytask.model.Collaborator;
 import com.kahlab.easytask.repository.CollaboratorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -14,17 +15,40 @@ public class CollaboratorService {
 
     @Autowired
     private CollaboratorRepository collaboratorRepository;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private LogService logService;
 
-    // Método para salvar um colaborador
+    private String getLoggedUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
     public Collaborator saveOrUpdateCollaborator(Collaborator collaborator) {
+        boolean isNew = (collaborator.getIdCollaborator() == null);
+
         if (collaborator.getPassword() != null && !collaborator.getPassword().startsWith("$2a$")) {
             String hashedPassword = passwordEncoder.encode(collaborator.getPassword());
             collaborator.setPassword(hashedPassword);
         }
-        return collaboratorRepository.save(collaborator);
+
+        Collaborator saved = collaboratorRepository.save(collaborator);
+
+        // ✅ Obter colaborador autenticado (quem está criando/editando)
+        String loggedEmail = getLoggedUserEmail();
+        Collaborator executor = collaboratorRepository.findByEmail(loggedEmail)
+                .orElseThrow(() -> new RuntimeException("Colaborador autenticado não encontrado"));
+
+        // 📝 Registro de log
+        String action = isNew ? "CREATE" : "UPDATE";
+        logService.logAction(
+                executor.getIdCollaborator(),
+                "COLLABORATOR",
+                action,
+                "Colaborador '" + saved.getName() + "' foi " + (isNew ? "cadastrado" : "atualizado")
+        );
+
+        return saved;
     }
 
     // Atualizar colaborador
@@ -35,7 +59,23 @@ public class CollaboratorService {
             existingCollaborator.setEmail(updatedCollaborator.getEmail());
             existingCollaborator.setPhone(updatedCollaborator.getPhone());
             existingCollaborator.setPosition(updatedCollaborator.getPosition());
-            return collaboratorRepository.save(existingCollaborator);
+
+            Collaborator saved = collaboratorRepository.save(existingCollaborator);
+
+            // ✅ Obter colaborador autenticado
+            String loggedEmail = getLoggedUserEmail();
+            Collaborator executor = collaboratorRepository.findByEmail(loggedEmail)
+                    .orElseThrow(() -> new RuntimeException("Colaborador autenticado não encontrado"));
+
+            // 📝 Registro de log
+            logService.logAction(
+                    executor.getIdCollaborator(),
+                    "COLLABORATOR",
+                    "UPDATE",
+                    "Colaborador '" + saved.getName() + "' foi atualizado"
+            );
+
+            return saved;
         }).orElseThrow(() -> new RuntimeException("Collaborator not found with ID: " + id));
     }
 
@@ -59,9 +99,25 @@ public class CollaboratorService {
         return collaboratorRepository.findAll();
     }
 
-    // Método para deletar um colaborador pelo ID
     public void deleteCollaborator(Long id) {
-        collaboratorRepository.deleteById(id);
+        Collaborator toDelete = collaboratorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        // 🔐 Obter quem está executando
+        String loggedEmail = getLoggedUserEmail();
+        Collaborator executor = collaboratorRepository.findByEmail(loggedEmail)
+                .orElseThrow(() -> new RuntimeException("Colaborador autenticado não encontrado"));
+
+        // 📝 Registrar log
+        logService.logAction(
+                executor.getIdCollaborator(),
+                "COLLABORATOR",
+                "DELETE",
+                "Colaborador '" + toDelete.getName() + "' foi excluído"
+        );
+
+        collaboratorRepository.delete(toDelete);
     }
+
 
 }

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
         private final TaskRepository taskRepository;
         private final CollaboratorRepository collaboratorRepository;
         private final CommentMapper commentMapper;
+        private final LogService logService;
 
         public CommentResponseDTO createComment(CommentRequestDTO dto) {
             Task task = taskRepository.findById(dto.getIdTask())
@@ -57,6 +58,13 @@ import java.util.stream.Collectors;
                         emailBody
                 );
             }
+            logService.logAction(
+                    author.getIdCollaborator(),
+                    "COMMENT",
+                    "CREATE",
+                    "Comentário adicionado à tarefa '" + task.getTitle() + "' por '" + author.getName() + "'"
+            );
+
 
             return commentMapper.toDTO(saved);
         }
@@ -119,6 +127,18 @@ import java.util.stream.Collectors;
             }
 
             commentRepository.delete(comment);
+
+            // Buscar colaborador autenticado
+            Collaborator author = collaboratorRepository.findByEmail(loggedEmail)
+                    .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+            // ✅ REGISTRO DE LOG
+            logService.logAction(
+                    author.getIdCollaborator(),
+                    "COMMENT",
+                    "DELETE",
+                    "Comentário removido da tarefa '" + comment.getTask().getTitle() + "'"
+            );
         }
 
         private String buildCommentEmail(String collaboratorName, String taskTitle, String commentAuthor) {
