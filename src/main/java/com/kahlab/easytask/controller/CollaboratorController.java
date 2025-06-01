@@ -1,6 +1,7 @@
 package com.kahlab.easytask.controller;
 
 
+import com.kahlab.easytask.DTO.PasswordChangeDTO;
 import com.kahlab.easytask.model.Collaborator;
 import com.kahlab.easytask.model.Task;
 import com.kahlab.easytask.repository.CollaboratorRepository;
@@ -43,7 +44,7 @@ public class CollaboratorController {
     private RefreshTokenService refreshTokenService;
     @Autowired
     private LogService logService;
-
+   
 
     @PreAuthorize("hasRole('SUPERIOR')")
     @PostMapping
@@ -178,6 +179,16 @@ public class CollaboratorController {
                 "nome", collaborator.getName(),
                 "position", collaborator.getPosition()
         ));
+    }
+
+    @PutMapping("/{id}/change-password")
+    public ResponseEntity<String> changePassword(@PathVariable Long id, @RequestBody PasswordChangeDTO dto) {
+        try {
+            collaboratorService.changePassword(id, dto);
+            return ResponseEntity.ok("Senha alterada com sucesso!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/logout")

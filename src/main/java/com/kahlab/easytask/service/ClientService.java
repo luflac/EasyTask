@@ -63,10 +63,12 @@ public class ClientService {
             existingClient.setName(updatedClient.getName());
             existingClient.setEmail(updatedClient.getEmail());
             existingClient.setPhone(updatedClient.getPhone());
+            existingClient.setCnpj(updatedClient.getCnpj());
 
+            // Salva apenas uma vez
             Client savedClient = clientRepository.save(existingClient);
 
-            // ✅ Log da atualização
+            // Log da atualização
             String loggedEmail = getLoggedUserEmail();
             Collaborator author = collaboratorRepository.findByEmail(loggedEmail)
                     .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
@@ -78,9 +80,10 @@ public class ClientService {
                     "Cliente '" + savedClient.getName() + "' foi atualizado"
             );
 
-            return clientRepository.save(existingClient);
+            return savedClient;
         }).orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
     }
+
 
     public void deleteClient(Long id) {
         Client client = clientRepository.findById(id)

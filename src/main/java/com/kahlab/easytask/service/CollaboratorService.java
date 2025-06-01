@@ -1,5 +1,6 @@
 package com.kahlab.easytask.service;
 
+import com.kahlab.easytask.DTO.PasswordChangeDTO;
 import com.kahlab.easytask.model.Collaborator;
 import com.kahlab.easytask.repository.CollaboratorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,19 +56,16 @@ public class CollaboratorService {
     public Collaborator updateCollaborator(Long id, Collaborator updatedCollaborator) {
         return collaboratorRepository.findById(id).map(existingCollaborator -> {
             existingCollaborator.setName(updatedCollaborator.getName());
-            existingCollaborator.setPassword(updatedCollaborator.getPassword());
             existingCollaborator.setEmail(updatedCollaborator.getEmail());
             existingCollaborator.setPhone(updatedCollaborator.getPhone());
             existingCollaborator.setPosition(updatedCollaborator.getPosition());
 
             Collaborator saved = collaboratorRepository.save(existingCollaborator);
 
-            // ✅ Obter colaborador autenticado
             String loggedEmail = getLoggedUserEmail();
             Collaborator executor = collaboratorRepository.findByEmail(loggedEmail)
                     .orElseThrow(() -> new RuntimeException("Colaborador autenticado não encontrado"));
 
-            // 📝 Registro de log
             logService.logAction(
                     executor.getIdCollaborator(),
                     "COLLABORATOR",
@@ -78,6 +76,7 @@ public class CollaboratorService {
             return saved;
         }).orElseThrow(() -> new RuntimeException("Collaborator not found with ID: " + id));
     }
+
 
     // Método para buscar colaborador pelo Nome
     public List<Collaborator> findCollaboratorByName(String name) {
@@ -117,6 +116,32 @@ public class CollaboratorService {
         );
 
         collaboratorRepository.delete(toDelete);
+    }
+
+    public void changePassword(Long id, PasswordChangeDTO dto) {
+        Collaborator collaborator = collaboratorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Colaborador não encontrado"));
+
+        // Verifica se a senha atual está correta
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), collaborator.getPassword())) {
+            throw new RuntimeException("Senha atual incorreta");
+        }
+
+        // Altera para a nova senha criptografada
+        collaborator.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        collaboratorRepository.save(collaborator);
+
+        // Log de alteração
+        String loggedEmail = getLoggedUserEmail();
+        Collaborator executor = collaboratorRepository.findByEmail(loggedEmail)
+                .orElseThrow(() -> new RuntimeException("Colaborador autenticado não encontrado"));
+
+        logService.logAction(
+                executor.getIdCollaborator(),
+                "COLLABORATOR",
+                "PASSWORD_CHANGE",
+                "Senha do colaborador '" + collaborator.getName() + "' foi alterada"
+        );
     }
 
 

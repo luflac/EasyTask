@@ -2,6 +2,7 @@ package com.kahlab.easytask.controller;
 
 import com.kahlab.easytask.model.Client;
 import com.kahlab.easytask.model.Task;
+import com.kahlab.easytask.repository.ClientRepository;
 import com.kahlab.easytask.service.ClientService;
 import com.kahlab.easytask.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,8 @@ public class ClientController {
 
     @Autowired
     private ClientService clientService;
-
+    @Autowired
+    private ClientRepository clientRepository;
     @Autowired
     private TaskService taskService;
 
@@ -29,13 +31,16 @@ public class ClientController {
     }
 
     @PutMapping("/{idClient}")
-    public ResponseEntity<Client> updateClient(@PathVariable Long idClient, @RequestBody Client client) {
-        try {
-            Client updatedClient = clientService.updateClient(idClient, client);
-            return ResponseEntity.ok(updatedClient);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public Client updateClient(@PathVariable Long idClient, @RequestBody Client updatedData) {
+        Client existingClient = clientRepository.findById(idClient)
+                .orElseThrow(() -> new RuntimeException("Client not found"));
+
+        existingClient.setName(updatedData.getName());
+        existingClient.setEmail(updatedData.getEmail());
+        existingClient.setPhone(updatedData.getPhone());
+        existingClient.setCnpj(updatedData.getCnpj());
+
+        return clientRepository.save(existingClient);
     }
 
     @GetMapping("/{idClient}")
