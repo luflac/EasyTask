@@ -1,5 +1,6 @@
 package com.kahlab.easytask.repository;
 
+import com.kahlab.easytask.DTO.TaskGeneralReportDTO;
 import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
 import com.kahlab.easytask.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -40,6 +41,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     // Buscar tarefas com data de criação anterior a uma data específica
     List<Task> findByCreationDateBefore(Date creationDate);
 
+    //QUERY do relátorio de prioridade
     @Query("""
     SELECT new com.kahlab.easytask.DTO.TaskPriorityReportDTO(
         t.title,
@@ -53,6 +55,43 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     ORDER BY t.priority DESC
 """)
     List<TaskPriorityReportDTO> findAllTasksOrderedByPriority();
+
+    //QUERY do relátorio de tarefas (cliente)
+    @Query("""
+    SELECT new com.kahlab.easytask.DTO.TaskGeneralReportDTO(
+        t.title,
+        t.priority,
+        t.dueDate,
+        t.phase.name,
+        t.collaborator.name
+    )
+    FROM Task t
+    WHERE t.client.idClient = :idClient
+    ORDER BY t.priority DESC
+""")
+    List<TaskGeneralReportDTO> findTasksByClientId(Long idClient);
+
+    //QUERY do relátorio de tarefas (colaborador)
+    @Query("""
+    SELECT new com.kahlab.easytask.DTO.TaskGeneralReportDTO(
+        t.title,
+        t.priority,
+        t.dueDate,
+        t.phase.name,
+        t.client.name
+    )
+    FROM Task t
+    WHERE t.collaborator.idCollaborator = :idCollaborator
+    ORDER BY t.priority DESC
+""")
+    List<TaskGeneralReportDTO> findTasksByCollaboratorId(Long idCollaborator);
+
+    @Query("SELECT c.name FROM Client c WHERE c.idClient = :id")
+    String findClientNameById(Long id);
+
+    @Query("SELECT c.name FROM Collaborator c WHERE c.idCollaborator = :id")
+    String findCollaboratorNameById(Long id);
+
 
 }
 

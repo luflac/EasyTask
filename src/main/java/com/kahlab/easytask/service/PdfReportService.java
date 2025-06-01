@@ -1,5 +1,6 @@
 package com.kahlab.easytask.service;
 
+import com.kahlab.easytask.DTO.TaskGeneralReportDTO;
 import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
 import com.kahlab.easytask.repository.TaskRepository;
 import com.lowagie.text.*;
@@ -90,6 +91,74 @@ public class PdfReportService {
         }
     }
 
+    public byte[] generateGeneralReportPdf(String type, Long id) {
+        List<TaskGeneralReportDTO> tasks;
+        String personName;
+
+        if ("client".equalsIgnoreCase(type)) {
+            tasks = taskRepository.findTasksByClientId(id);
+            personName = taskRepository.findClientNameById(id); // Nova query
+        } else if ("collaborator".equalsIgnoreCase(type)) {
+            tasks = taskRepository.findTasksByCollaboratorId(id);
+            personName = taskRepository.findCollaboratorNameById(id); // Nova query
+        } else {
+            throw new IllegalArgumentException("Tipo inválido: use 'client' ou 'collaborator'");
+        }
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4, 40, 40, 60, 40);
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            // Título
+            String titleText = "Relatório de Tarefas por " + ("client".equalsIgnoreCase(type) ? "Cliente" : "Colaborador");
+            Paragraph title = new Paragraph(titleText, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+
+            // Data
+            Paragraph data = new Paragraph("Emitido em: " + LocalDate.now(),
+                    FontFactory.getFont(FontFactory.HELVETICA, 12));
+            data.setAlignment(Element.ALIGN_CENTER);
+            document.add(data);
+
+            // Nome
+            Paragraph nome = new Paragraph("Referente a: " + personName,
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
+            nome.setAlignment(Element.ALIGN_CENTER);
+            document.add(nome);
+
+
+            document.add(new Paragraph(" "));
+
+            // Tabela
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+            table.setSpacingAfter(10f);
+
+            addHeader(table, "Título");
+            addHeader(table, "Prioridade");
+            addHeader(table, "Data de Entrega");
+            addHeader(table, "Fase");
+            addHeader(table, type.equals("client") ? "Colaborador" : "Cliente");
+
+            for (TaskGeneralReportDTO task : tasks) {
+                table.addCell(task.getTitle());
+                table.addCell(String.valueOf(task.getPriority()));
+                table.addCell(task.getDueDate() != null ? task.getDueDate().toString() : "—");
+                table.addCell(task.getPhaseName());
+                table.addCell(task.getOtherPartyName());
+            }
+
+            document.add(table);
+            document.close();
+            return out.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao gerar PDF do relatório geral", e);
+        }
+    }
 
     private void addHeader(PdfPTable table, String title) {
         PdfPCell cell = new PdfPCell(new Phrase(title, FontFactory.getFont(FontFactory.HELVETICA_BOLD)));

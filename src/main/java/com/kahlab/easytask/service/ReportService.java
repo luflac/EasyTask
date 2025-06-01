@@ -1,5 +1,6 @@
 package com.kahlab.easytask.service;
 
+import com.kahlab.easytask.DTO.TaskGeneralReportDTO;
 import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
 import com.kahlab.easytask.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,14 @@ public class ReportService {
 
     public List<TaskPriorityReportDTO> getTasksOrderedByPriority() {
         return taskRepository.findAllTasksOrderedByPriority();
+    }
+
+    public List<TaskGeneralReportDTO> getReportByClient(Long idClient) {
+        return taskRepository.findTasksByClientId(idClient);
+    }
+
+    public List<TaskGeneralReportDTO> getReportByCollaborator(Long idCollaborator) {
+        return taskRepository.findTasksByCollaboratorId(idCollaborator);
     }
 }
 

@@ -1,14 +1,13 @@
 package com.kahlab.easytask.controller;
 
+import com.kahlab.easytask.DTO.TaskGeneralReportDTO;
 import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
 import com.kahlab.easytask.service.PdfReportService;
 import com.kahlab.easytask.service.ReportService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -39,5 +38,34 @@ public class ReportController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
+
+    @GetMapping("/general/pdf")
+    public ResponseEntity<byte[]> downloadGeneralReportPdf(
+            @RequestParam String type,
+            @RequestParam Long id
+    ) {
+        byte[] pdf = pdfReportService.generateGeneralReportPdf(type, id);
+
+        String fileName = "relatorio-geral-" + type + "-" + id + ".pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+
+    @GetMapping("/general/client/{idClient}")
+    public ResponseEntity<List<TaskGeneralReportDTO>> getReportByClient(@PathVariable Long idClient) {
+        List<TaskGeneralReportDTO> report = reportService.getReportByClient(idClient);
+        return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/general/collaborator/{idCollaborator}")
+    public ResponseEntity<List<TaskGeneralReportDTO>> getReportByCollaborator(@PathVariable Long idCollaborator) {
+        List<TaskGeneralReportDTO> report = reportService.getReportByCollaborator(idCollaborator);
+        return ResponseEntity.ok(report);
+    }
+
 
 }
