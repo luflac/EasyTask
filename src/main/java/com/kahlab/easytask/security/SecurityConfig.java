@@ -46,6 +46,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/tasks/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/tasks/**").hasRole("SUPERIOR")
 
+                        // COMMENTS
+                        .requestMatchers(HttpMethod.POST, "/comments").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/comments/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/comments/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/comments/**").authenticated()
+
+                        // REPORTS
+                        .requestMatchers(HttpMethod.GET, "/reports/**").authenticated()
+
                         // BOARDS
                         .requestMatchers(HttpMethod.GET, "/boards/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/boards/**").authenticated()

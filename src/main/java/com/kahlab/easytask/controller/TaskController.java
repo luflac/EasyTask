@@ -1,5 +1,7 @@
 package com.kahlab.easytask.controller;
 
+import com.kahlab.easytask.DTO.TaskDTO;
+import com.kahlab.easytask.DTO.TaskResponseDTO;
 import com.kahlab.easytask.model.Task;
 import com.kahlab.easytask.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +19,9 @@ public class TaskController {
     private TaskService taskService;
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
+    public ResponseEntity<TaskResponseDTO> createTask(@RequestBody TaskDTO task) {
         Task createdTask = taskService.createTask(task);
-        return ResponseEntity.ok(createdTask);
+        return ResponseEntity.ok(taskService.toDTO(createdTask));
     }
 
     @PostMapping("/{idTask}/move")
@@ -32,25 +34,37 @@ public class TaskController {
         }
     }
 
+    @PutMapping("/{taskId}/move-board/{newBoardId}")
+    public ResponseEntity<TaskResponseDTO> moveTaskToBoard(@PathVariable Long taskId, @PathVariable Long newBoardId) {
+        TaskResponseDTO dto = taskService.moveTaskToBoard(taskId, newBoardId);
+        return ResponseEntity.ok(dto);
+    }
+
     @PutMapping("/{idTask}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long idTask, @RequestBody Task task) {
+    public ResponseEntity<TaskResponseDTO> updateTask(@PathVariable Long idTask, @RequestBody TaskDTO task) {
         try {
             Task updatedTask = taskService.updateTask(idTask, task);
-            return ResponseEntity.ok(updatedTask);
+            return ResponseEntity.ok(taskService.toDTO(updatedTask));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @GetMapping
-    public ResponseEntity<List<Task>> getAllTasks() {
+    public ResponseEntity<List<TaskResponseDTO>> getAllTasks() {
         List<Task> tasks = taskService.findAllTasks();
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.toDTOList(taskService.findAllTasks()));
+    }
+
+    @GetMapping("/boards/{boardId}")
+    public ResponseEntity<List<TaskResponseDTO>> getTasksByBoard(@PathVariable Long boardId) {
+        return ResponseEntity.ok(taskService.findTasksByBoard(boardId));
     }
 
     @GetMapping("/{idTask}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long idTask) {
+    public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long idTask) {
         return taskService.findTaskById(idTask)
+                .map(taskService::toDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -79,9 +93,9 @@ public class TaskController {
     }
 
     @GetMapping("/phase/{idPhase}")
-    public ResponseEntity<List<Task>> getTasksByPhase(@PathVariable Long idPhase) {
+    public ResponseEntity<List<TaskResponseDTO>> getTasksByPhase(@PathVariable Long idPhase) {
         List<Task> tasks = taskService.findTasksByPhase(idPhase);
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.toDTOList(taskService.findTasksByPhase(idPhase)));
     }
 
     @DeleteMapping("/{idTask}")

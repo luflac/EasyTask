@@ -18,7 +18,7 @@ public class JwtUtil {
 
     private Key SECRET_KEY;
 
-    private static final long EXPIRATION_TIME = 1800000;
+    private static final long EXPIRATION_TIME = 14400000;
 
     @PostConstruct
     public void init() {

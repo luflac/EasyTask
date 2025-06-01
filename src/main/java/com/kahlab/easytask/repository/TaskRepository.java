@@ -1,5 +1,6 @@
 package com.kahlab.easytask.repository;
 
+import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
 import com.kahlab.easytask.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t.phase.name, COUNT(t) FROM Task t GROUP BY t.phase.name")
     List<Object[]> countTasksByPhase();
 
+    List<Task> findByBoardId(Long boardId);
+
     // Buscar tarefas por prioridade
     List<Task> findByPriority(int priority);
 
@@ -36,6 +39,20 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     // Buscar tarefas com data de criação anterior a uma data específica
     List<Task> findByCreationDateBefore(Date creationDate);
+
+    @Query("""
+    SELECT new com.kahlab.easytask.DTO.TaskPriorityReportDTO(
+        t.title,
+        t.dueDate,
+        t.priority,
+        t.phase.name,
+        t.client.name,
+        t.collaborator.name
+    )
+    FROM Task t
+    ORDER BY t.priority DESC
+""")
+    List<TaskPriorityReportDTO> findAllTasksOrderedByPriority();
 
 }
 
