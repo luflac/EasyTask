@@ -27,27 +27,41 @@ public class CollaboratorService {
 
     public Collaborator saveOrUpdateCollaborator(Collaborator collaborator) {
         boolean isNew = (collaborator.getIdCollaborator() == null);
+        boolean isFirstUser = collaboratorRepository.count() == 0;
 
         if (collaborator.getPassword() != null && !collaborator.getPassword().startsWith("$2a$")) {
             String hashedPassword = passwordEncoder.encode(collaborator.getPassword());
             collaborator.setPassword(hashedPassword);
         }
 
+        // Se for o primeiro usuário, define como SUPERIOR
+        if (isFirstUser) {
+            collaborator.setPosition("SUPERIOR");
+        }
+
         Collaborator saved = collaboratorRepository.save(collaborator);
 
-        // ✅ Obter colaborador autenticado (quem está criando/editando)
-        String loggedEmail = getLoggedUserEmail();
-        Collaborator executor = collaboratorRepository.findByEmail(loggedEmail)
-                .orElseThrow(() -> new RuntimeException("Colaborador autenticado não encontrado"));
+        // Só registra o log se não for o primeiro usuário
+        if (!isFirstUser) {
+            try {
+                String loggedEmail = getLoggedUserEmail();
+                Optional<Collaborator> executorOpt = collaboratorRepository.findByEmail(loggedEmail);
 
-        // 📝 Registro de log
-        String action = isNew ? "CREATE" : "UPDATE";
-        logService.logAction(
-                executor.getIdCollaborator(),
-                "COLLABORATOR",
-                action,
-                "Colaborador '" + saved.getName() + "' foi " + (isNew ? "cadastrado" : "atualizado")
-        );
+                if (executorOpt.isPresent()) {
+                    Collaborator executor = executorOpt.get();
+                    String action = isNew ? "CREATE" : "UPDATE";
+                    logService.logAction(
+                            executor.getIdCollaborator(),
+                            "COLLABORATOR",
+                            action,
+                            "Colaborador '" + saved.getName() + "' foi " + (isNew ? "cadastrado" : "atualizado")
+                    );
+                }
+            } catch (Exception e) {
+                // Se houver erro ao registrar o log, apenas ignora
+                // O importante é que o colaborador foi salvo
+            }
+        }
 
         return saved;
     }
