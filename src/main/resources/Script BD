@@ -6,7 +6,6 @@ CREATE TABLE client (
     cnpj VARCHAR(18)
 );
 
-
 CREATE TABLE collaborator (
     id_collaborator SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -22,6 +21,11 @@ CREATE TABLE phase (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     sequence INTEGER NOT NULL
+);
+
+CREATE TABLE board (
+    id_board SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE task (
@@ -61,4 +65,16 @@ CREATE TABLE log_entry (
     action VARCHAR(50) NOT NULL,       -- Ex: CREATE, UPDATE, DELETE
     description TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE board_collaborator (
+    id_board INTEGER NOT NULL REFERENCES board(id_board),
+    id_collaborator INTEGER NOT NULL REFERENCES collaborator(id_collaborator),
+    PRIMARY KEY (id_board, id_collaborator)
+);
+
+CREATE TABLE phase_board (
+    id_phase INTEGER NOT NULL REFERENCES phase(id_phase),
+    id_board INTEGER NOT NULL REFERENCES board(id_board),
+    PRIMARY KEY (id_phase, id_board)
 );
