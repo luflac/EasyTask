@@ -5,7 +5,9 @@ import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
 import com.kahlab.easytask.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -92,7 +94,20 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT c.name FROM Collaborator c WHERE c.idCollaborator = :id")
     String findCollaboratorNameById(Long id);
 
+    // Conta tarefas por nome da fase
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.phase.name = :phaseName")
+    long countByPhaseName(@Param("phaseName") String phaseName);
 
+    // Conta tarefas exceto uma fase específica
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.phase.name <> :phaseName")
+    long countByPhaseNameNot(@Param("phaseName") String phaseName);
+
+    // Conta tarefas atrasadas (prazo vencido e não concluídas)
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate < :today AND t.phase.name <> 'CONCLUÍDO'")
+    long countOverdueTasks(@Param("today") LocalDate today);
 }
+
+
+
 
 

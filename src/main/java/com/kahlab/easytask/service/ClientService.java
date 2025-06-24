@@ -84,7 +84,6 @@ public class ClientService {
         }).orElseThrow(() -> new RuntimeException("Client not found with ID: " + id));
     }
 
-
     public void deleteClient(Long id) {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));

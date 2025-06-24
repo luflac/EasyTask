@@ -1,5 +1,6 @@
 package com.kahlab.easytask.controller;
 
+import com.kahlab.easytask.DTO.StatisticsOverviewDTO;
 import com.kahlab.easytask.DTO.TaskGeneralReportDTO;
 import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
 import com.kahlab.easytask.service.PdfReportService;
@@ -67,5 +68,9 @@ public class ReportController {
         return ResponseEntity.ok(report);
     }
 
-
+    @GetMapping("/statistics")
+    public ResponseEntity<StatisticsOverviewDTO> getGeneralStatistics() {
+        StatisticsOverviewDTO statistics = reportService.getGeneralStatistics();
+        return ResponseEntity.ok(statistics);
+    }
 }

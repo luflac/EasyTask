@@ -85,7 +85,7 @@ public class TaskController {
         return ResponseEntity.ok(tasks);
     }
 
-    // Relatório de estatísticas gerais
+    // Relatório de estatísticas gerais (ANTIGO)
     @GetMapping("/report/general-statistics")
     public ResponseEntity<Map<String, Object>> getGeneralStatistics() {
         Map<String, Object> statistics = taskService.getGeneralStatistics();
