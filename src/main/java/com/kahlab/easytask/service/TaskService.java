@@ -32,9 +32,6 @@ public class TaskService {
     @Autowired
     private LogService logService;
 
-
-
-
     public Task createTask(TaskDTO dto) {
         // Buscar o Board
         Board board = boardRepository.findById(dto.getBoardId())
@@ -121,6 +118,9 @@ public class TaskService {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with ID: " + id));
 
+        // Salvar a fase atual antes de atualizar
+        Phase oldPhase = existingTask.getPhase();
+
         // Atualizar campos simples
         existingTask.setTitle(dto.getTitle());
         existingTask.setDescription(dto.getDescription());
@@ -153,6 +153,10 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Collaborator not found"));
         existingTask.setCollaborator(collaborator);
 
+        // Verificar se houve mudança de fase
+        boolean phaseChanged = oldPhase != null && !oldPhase.getIdPhase().equals(phase.getIdPhase());
+
+        // Salvar a tarefa antes de notificar
         Task updated = taskRepository.save(existingTask);
 
         // ✅ REGISTRO DE LOG
@@ -163,8 +167,24 @@ public class TaskService {
                 "Tarefa '" + updated.getTitle() + "' foi atualizada no board '" + board.getName() + "'"
         );
 
-        return taskRepository.save(existingTask);
+        // Enviar e-mail apenas após persistência
+        if (phaseChanged) {
+            String emailBody = buildTaskPhaseChangeEmail(
+                    updated.getCollaborator().getName(),
+                    updated.getTitle(),
+                    updated.getPhase().getName()
+            );
+
+            emailService.sendEmail(
+                    updated.getCollaborator().getEmail(),
+                    "Sua tarefa mudou de fase!",
+                    emailBody
+            );
+        }
+
+        return updated;
     }
+
 
     // Movimentar tarefa para outro estágio
     public Task moveTaskToPhase(Long taskId, Long phaseId) {
