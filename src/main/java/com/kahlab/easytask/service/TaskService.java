@@ -102,6 +102,7 @@ public class TaskService {
                 .creationDate(task.getCreationDate())
                 .boardName(task.getBoard().getName())
                 .phaseName(task.getPhase().getName())
+                .phaseId(task.getPhase().getIdPhase()) // ← ADICIONAR ESTA LINHA
                 .clientName(task.getClient().getName())
                 .collaboratorName(task.getCollaborator().getName())
                 .build();

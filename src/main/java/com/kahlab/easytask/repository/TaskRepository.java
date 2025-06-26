@@ -2,6 +2,7 @@ package com.kahlab.easytask.repository;
 
 import com.kahlab.easytask.DTO.TaskGeneralReportDTO;
 import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
+import com.kahlab.easytask.DTO.TaskTrackingReportDTO;
 import com.kahlab.easytask.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -105,9 +106,28 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     // Conta tarefas atrasadas (prazo vencido e não concluídas)
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate < :today AND t.phase.name <> 'CONCLUÍDO'")
     long countOverdueTasks(@Param("today") LocalDate today);
+
+    @Query("SELECT t FROM Task t WHERE t.collaborator.idCollaborator = :id AND t.creationDate BETWEEN :start AND :end")
+    List<Task> findByCollaboratorIdAndDateRange(@Param("id") Long id, @Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("SELECT t FROM Task t WHERE t.client.idClient = :id AND t.creationDate BETWEEN :start AND :end")
+    List<Task> findByClientIdAndDateRange(@Param("id") Long id, @Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("""
+    SELECT new com.kahlab.easytask.DTO.TaskTrackingReportDTO(
+        t.idTask,
+        t.title,
+        t.description,
+        t.priority,
+        t.phase.name,
+        t.creationDate,
+        t.dueDate,
+        t.client.name,
+        t.collaborator.name
+    )
+    FROM Task t
+    ORDER BY t.dueDate ASC
+""")
+    List<TaskTrackingReportDTO> findAllTasksForTracking();
+
 }
-
-
-
-
-

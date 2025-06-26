@@ -1,15 +1,15 @@
 package com.kahlab.easytask.controller;
 
-import com.kahlab.easytask.DTO.StatisticsOverviewDTO;
-import com.kahlab.easytask.DTO.TaskGeneralReportDTO;
-import com.kahlab.easytask.DTO.TaskPriorityReportDTO;
+import com.kahlab.easytask.DTO.*;
 import com.kahlab.easytask.service.PdfReportService;
 import com.kahlab.easytask.service.ReportService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -73,4 +73,32 @@ public class ReportController {
         StatisticsOverviewDTO statistics = reportService.getGeneralStatistics();
         return ResponseEntity.ok(statistics);
     }
+
+    @GetMapping("/collaborators/{id}/performance-report")
+    public ResponseEntity<CollaboratorPerformanceReportDTO> getPerformanceReport(
+            @PathVariable Long id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+
+        CollaboratorPerformanceReportDTO report = reportService.generatePerformanceReport(id, start, end);
+        return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/clients/{id}/performance-report")
+    public ResponseEntity<ClientPerformanceReportDTO> getClientPerformanceReport(
+            @PathVariable Long id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+
+        ClientPerformanceReportDTO report = reportService.generatePerformanceReportForClient(id, start, end);
+        return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/tasks/tracking")
+    public ResponseEntity<List<TaskTrackingReportDTO>> getAllTasksForTracking() {
+        List<TaskTrackingReportDTO> report = reportService.getAllTasksForTracking();
+        return ResponseEntity.ok(report);
+    }
+
+
 }

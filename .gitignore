@@ -11,6 +11,9 @@ target/
 # Compiled class file
 *.class
 
+# Arquivos sensíveis
+/src/main/resources/application.properties
+
 # Log file
 *.log
 

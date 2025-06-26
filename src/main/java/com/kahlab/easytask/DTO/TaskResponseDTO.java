@@ -17,6 +17,7 @@ import java.time.LocalDate;
 
         private String boardName;
         private String phaseName;
+        private Long phaseId;
         private String clientName;
         private String collaboratorName;
     }

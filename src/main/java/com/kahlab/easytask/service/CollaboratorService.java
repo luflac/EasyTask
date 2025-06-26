@@ -1,9 +1,11 @@
 package com.kahlab.easytask.service;
 
 import com.kahlab.easytask.DTO.PasswordChangeDTO;
+import com.kahlab.easytask.model.AccessLevelEasyTask;
 import com.kahlab.easytask.model.Collaborator;
 import com.kahlab.easytask.repository.CollaboratorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class CollaboratorService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private LogService logService;
+
 
     private String getLoggedUserEmail() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -69,17 +72,39 @@ public class CollaboratorService {
     // Atualizar colaborador
     public Collaborator updateCollaborator(Long id, Collaborator updatedCollaborator) {
         return collaboratorRepository.findById(id).map(existingCollaborator -> {
+            // Atualizar campos básicos
             existingCollaborator.setName(updatedCollaborator.getName());
             existingCollaborator.setEmail(updatedCollaborator.getEmail());
             existingCollaborator.setPhone(updatedCollaborator.getPhone());
             existingCollaborator.setPosition(updatedCollaborator.getPosition());
 
-            Collaborator saved = collaboratorRepository.save(existingCollaborator);
-
+            // Identificar colaborador autenticado
             String loggedEmail = getLoggedUserEmail();
             Collaborator executor = collaboratorRepository.findByEmail(loggedEmail)
                     .orElseThrow(() -> new RuntimeException("Colaborador autenticado não encontrado"));
 
+            // Verificar se o nível de acesso será alterado
+            if (updatedCollaborator.getAccessLevel() != null &&
+                    !updatedCollaborator.getAccessLevel().equals(existingCollaborator.getAccessLevel())) {
+
+                // Verifica se o executor tem permissão para alterar nível de acesso
+                if (!executor.getAccessLevel().equals(AccessLevelEasyTask.SUPERIOR)) {
+                    throw new AccessDeniedException("Apenas colaboradores com nível SUPERIOR podem alterar o nível de acesso.");
+                }
+
+                // Impede que o usuário altere seu próprio nível de acesso
+                if (executor.getIdCollaborator().equals(existingCollaborator.getIdCollaborator())) {
+                    throw new IllegalArgumentException("Você não pode alterar seu próprio nível de acesso.");
+                }
+
+                // Atualiza nível de acesso
+                existingCollaborator.setAccessLevel(updatedCollaborator.getAccessLevel());
+            }
+
+            // Salva as alterações
+            Collaborator saved = collaboratorRepository.save(existingCollaborator);
+
+            // Log da ação
             logService.logAction(
                     executor.getIdCollaborator(),
                     "COLLABORATOR",
